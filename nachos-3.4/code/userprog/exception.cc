@@ -85,7 +85,7 @@ void IncreasePC()
 
 // function handle SyscallException
 void SyscallExceptionHandler_ReadInt() {
-
+    
 }
 void SyscallExceptionHandler_PrintInt() {
 
