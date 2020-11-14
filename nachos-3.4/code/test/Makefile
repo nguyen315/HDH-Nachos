@@ -74,12 +74,12 @@ createfile: createfile.o start.o
 
 readstring.o: readstring.c
 	$(CC) $(CFLAGS) -c readstring.c
-readstring:
+readstring: readstring.o start.o
 	$(LD) $(LDFLAGS) start.o readstring.o -o readstring.coff
 	../bin/coff2noff readstring.coff readstring
 
 printstring.o: printstring.c
 	$(CC) $(CFLAGS) -c printstring.c
-printstring:
+printstring: printstring.o start.o
 	$(LD) $(LDFLAGS) start.o printstring.o -o printstring.coff
 	../bin/coff2noff printstring.coff printstring
