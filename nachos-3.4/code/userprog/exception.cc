@@ -65,8 +65,7 @@ int System2User(int virtAddr, int len, char *buffer)
     int oneChar = 0;
     do
     {
-        oneChar = (int)buffer[i];
-        machine->WriteMem(virtAddr + i, 1, oneChar);
+        oneChar = (int)buffer[i];        machine->WriteMem(virtAddr + i, 1, oneChar);
         i++;
     } while (i < len && oneChar != 0);
     return i;
@@ -97,10 +96,24 @@ void SyscallExceptionHandler_PrintChar() {
 
 }
 void SyscallExceptionHandler_ReadString() {
-
+  int p;
+  int len;
+  char* buffer;
+  p = machine->ReadRegister(4); // lấy địa chỉ từ thanh ghi r4
+  len = machine->ReadRegister(5); // độ dài chuỗi từ thanh ghi r5
+  buffer = User2System(p, len); 
+  gSynchConsole->Read(buffer, len); // đọc chuỗi 
+  delete buffer;
 }
 void SyscallExceptionHandler_PrintString() {
-
+  int p;
+  int len = 0;			
+  char* buffer;
+  p = machine->ReadRegister(4); // lấy địa chỉ từ thanh ghi r4
+  buffer = User2System(p, 255); 
+  while (buffer[++len]); //tìm độ dài chuỗi
+  gSynchConsole->Write(buffer, len);
+  delete buffer;
 }
 //----------------------------------------------------------------------
 // ExceptionHandler
