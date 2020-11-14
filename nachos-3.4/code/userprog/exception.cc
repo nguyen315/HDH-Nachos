@@ -103,6 +103,7 @@ void SyscallExceptionHandler_ReadString() {
   len = machine->ReadRegister(5); // độ dài chuỗi từ thanh ghi r5
   buffer = User2System(p, len); 
   gSynchConsole->Read(buffer, len); // đọc chuỗi 
+  System2User(p, len, buffer);
   delete buffer;
 }
 void SyscallExceptionHandler_PrintString() {
