@@ -220,7 +220,7 @@ void ExceptionHandler(ExceptionType which)
 
             case SC_ReadInt:
             {
-                SyscallExceptionHandler_ReadInt()
+                SyscallExceptionHandler_ReadInt();
                 break;
             }
 
