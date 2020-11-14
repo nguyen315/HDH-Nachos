@@ -84,23 +84,62 @@ void IncreasePC()
 }
 
 // function handle SyscallException
-void SyscallExceptionHandler_ReadInt() {
-    
+void SyscallExceptionHandler_ReadInt()
+{
+    /*int: [-2147483648 , 2147483647] --> max length = 11*/
+    const int maxlen = 11;
+    char num_string[maxlen] = {0};
+    long long ret = 0;
+    for (int i = 0; i < maxlen; i++)
+    {
+        char c = 0;
+        gSynchConsole->Read(&c, 1);
+        if (c >= '0' && c <= '9')
+            num_string[i] = c;
+        else if (i == 0 && c == '-')
+            num_string[i] = c;
+        else
+            break;
+    }
+    int i = (num_string[0] == '-') ? 1 : 0;
+    while (i < maxlen && num_string[i] >= '0' && num_string[i] <= '9')
+        ret = ret * 10 + num_string[i++] - '0';
+    ret = (num_string[0] == '-') ? (-ret) : ret;
+    machine->WriteRegister(2, (int)ret);
 }
-void SyscallExceptionHandler_PrintInt() {
-
+void SyscallExceptionHandler_PrintInt()
+{
+    int n = machine->ReadRegister(4);
+    /*int: [-2147483648 , 2147483647] --> max length = 11*/
+    const int maxlen = 11;
+    char num_string[maxlen] = {0};
+    int tmp[maxlen] = {0}, i = 0, j = 0;
+    if (n < 0)
+    {
+        n = -n;
+        num_string[i++] = '-';
+    }
+    do
+    {
+        tmp[j++] = n % 10;
+        n /= 10;
+    } while (n);
+    while (j)
+        num_string[i++] = '0' + (char)tmp[--j];
+    gSynchConsole->Write(num_string, i);
+    machine->WriteRegister(2, 0);
 }
-void SyscallExceptionHandler_ReadChar() {
-
+void SyscallExceptionHandler_ReadChar()
+{
 }
-void SyscallExceptionHandler_PrintChar() {
-
+void SyscallExceptionHandler_PrintChar()
+{
 }
-void SyscallExceptionHandler_ReadString() {
-
+void SyscallExceptionHandler_ReadString()
+{
 }
-void SyscallExceptionHandler_PrintString() {
-
+void SyscallExceptionHandler_PrintString()
+{
 }
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -161,103 +200,103 @@ void ExceptionHandler(ExceptionType which)
     case SyscallException:
         switch (type)
         {
-            case SC_Halt:
-            {
-                DEBUG('a', "\n Shutdown, initiated by user program.");
-                printf("\n\n Shutdown, initiated by user program.");
-                interrupt->Halt();
-                break;
-            }
+        case SC_Halt:
+        {
+            DEBUG('a', "\n Shutdown, initiated by user program.");
+            printf("\n\n Shutdown, initiated by user program.");
+            interrupt->Halt();
+            break;
+        }
 
-            case SC_Exit:
-            {
-                DEBUG('a', "\n System call Exit.");
-                printf("\n\n System call Exit.");
-                interrupt->Halt();
-                break;
-            }
+        case SC_Exit:
+        {
+            DEBUG('a', "\n System call Exit.");
+            printf("\n\n System call Exit.");
+            interrupt->Halt();
+            break;
+        }
 
-            case SC_Create:
+        case SC_Create:
+        {
+            int virtAddr;
+            char *filename;
+            DEBUG('a', "\n SC_Create call ...");
+            DEBUG('a', "\n Reading virtual address of filename");
+            // Lấy tham số tên tập tin từ thanh ghi r4
+            virtAddr = machine->ReadRegister(4);
+            DEBUG('a', "\n Reading filename.");
+            // MaxFileLength là = 32
+            filename = User2System(virtAddr, 32 + 1);
+            if (filename == NULL)
             {
-                int virtAddr;
-                char *filename;
-                DEBUG('a', "\n SC_Create call ...");
-                DEBUG('a', "\n Reading virtual address of filename");
-                // Lấy tham số tên tập tin từ thanh ghi r4
-                virtAddr = machine->ReadRegister(4);
-                DEBUG('a', "\n Reading filename.");
-                // MaxFileLength là = 32
-                filename = User2System(virtAddr, 32 + 1);
-                if (filename == NULL)
-                {
-                    printf("\n Not enough memory in system");
-                    DEBUG('a', "\n Not enough memory in system");
-                    machine->WriteRegister(2, -1); // trả về lỗi cho chương
-                    // trình người dùng
-                    delete filename;
-                    return;
-                }
-                DEBUG('a', "\n Finish reading filename.");
-                //DEBUG('a',"\n File name : '"<<filename<<"'");
-                // Create file with size = 0
-                // Dùng đối tượng fileSystem của lớp OpenFile để tạo file,
-                // việc tạo file này là sử dụng các thủ tục tạo file của hệ điều
-                // hành Linux, chúng ta không quản ly trực tiếp các block trên
-                // đĩa cứng cấp phát cho file, việc quản ly các block của file
-                // trên ổ đĩa là một đồ án khác
-                if (!fileSystem->Create(filename, 0))
-                {
-                    printf("\n Error create file '%s'", filename);
-                    machine->WriteRegister(2, -1);
-                    delete filename;
-                    return;
-                }
-                machine->WriteRegister(2, 0); // trả về cho chương trình
-                // người dùng thành công
+                printf("\n Not enough memory in system");
+                DEBUG('a', "\n Not enough memory in system");
+                machine->WriteRegister(2, -1); // trả về lỗi cho chương
+                // trình người dùng
                 delete filename;
-                break;
+                return;
             }
+            DEBUG('a', "\n Finish reading filename.");
+            //DEBUG('a',"\n File name : '"<<filename<<"'");
+            // Create file with size = 0
+            // Dùng đối tượng fileSystem của lớp OpenFile để tạo file,
+            // việc tạo file này là sử dụng các thủ tục tạo file của hệ điều
+            // hành Linux, chúng ta không quản ly trực tiếp các block trên
+            // đĩa cứng cấp phát cho file, việc quản ly các block của file
+            // trên ổ đĩa là một đồ án khác
+            if (!fileSystem->Create(filename, 0))
+            {
+                printf("\n Error create file '%s'", filename);
+                machine->WriteRegister(2, -1);
+                delete filename;
+                return;
+            }
+            machine->WriteRegister(2, 0); // trả về cho chương trình
+            // người dùng thành công
+            delete filename;
+            break;
+        }
 
-            case SC_ReadInt:
-            {
-                SyscallExceptionHandler_ReadInt();
-                break;
-            }
+        case SC_ReadInt:
+        {
+            SyscallExceptionHandler_ReadInt();
+            break;
+        }
 
-            case SC_PrintInt:
-            {
-                SyscallExceptionHandler_PrintInt();
-                break;
-            }
+        case SC_PrintInt:
+        {
+            SyscallExceptionHandler_PrintInt();
+            break;
+        }
 
-            case SC_ReadChar:
-            {
-                SyscallExceptionHandler_ReadChar();
-                break;
-            }
+        case SC_ReadChar:
+        {
+            SyscallExceptionHandler_ReadChar();
+            break;
+        }
 
-            case SC_PrintChar:
-            {
-                SyscallExceptionHandler_PrintChar();
-                break;
-            }
+        case SC_PrintChar:
+        {
+            SyscallExceptionHandler_PrintChar();
+            break;
+        }
 
-            case SC_ReadString:
-            {
-                SyscallExceptionHandler_ReadString();
-                break;
-            }
-            case SC_PrintString:
-            {
-                SyscallExceptionHandler_PrintString();
-                break;
-            }
+        case SC_ReadString:
+        {
+            SyscallExceptionHandler_ReadString();
+            break;
+        }
+        case SC_PrintString:
+        {
+            SyscallExceptionHandler_PrintString();
+            break;
+        }
 
-            default:
-            {
-                printf("\n Unexpected user mode exception (%d %d)", which, type);
-                interrupt->Halt();
-            }
+        default:
+        {
+            printf("\n Unexpected user mode exception (%d %d)", which, type);
+            interrupt->Halt();
+        }
         }
 
         // Increase Program Counter
