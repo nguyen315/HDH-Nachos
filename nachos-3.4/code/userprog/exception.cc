@@ -25,6 +25,10 @@
 #include "system.h"
 #include "syscall.h"
 
+#define MaxFileLength 32
+#define MY_INT_MAX 2147483647
+#define MY_INT_MIN -2147483648
+
 // Input: - User space address (int)
 //  - Limit of buffer(int)
 // Output:- Buffer (char*)
@@ -75,7 +79,7 @@ int System2User(int virtAddr, int len, char *buffer)
 // Increase Program Counter
 void IncreasePC()
 {
-    printf("\n IncreasePC() call ...");
+    // printf("\n IncreasePC() call ...");
     int counter = machine->ReadRegister(PCReg);
     machine->WriteRegister(PrevPCReg, counter);
     counter = machine->ReadRegister(NextPCReg);
@@ -84,50 +88,116 @@ void IncreasePC()
 }
 
 // function handle SyscallException
+
 void SyscallExceptionHandler_ReadInt()
 {
-    /*int: [-2147483648 , 2147483647] --> max length = 11*/
-    const int maxlen = 11;
-    char num_string[maxlen] = {0};
-    long long ret = 0;
-    for (int i = 0; i < maxlen; i++)
+    // Input: K co
+    // Output: Tra ve so nguyen doc duoc tu man hinh console.
+    // Chuc nang: Doc so nguyen tu man hinh console. [-2147483648, 2147483647]
+    char *buffer;
+    int MAX_BUFFER = 255;
+    buffer = new char[MAX_BUFFER + 1];
+    int numbytes = gSynchConsole->Read(buffer, MAX_BUFFER); // doc buffer toi da MAX_BUFFER ki tu, tra ve so ki tu doc dc
+    long long number = 0;                                   
+
+    /* Qua trinh chuyen doi tu buffer sang so nguyen int */
+    bool isNegative = false;
+    int startIndex = 0;
+    if (buffer[0] == '-')
     {
-        char c = 0;
-        gSynchConsole->Read(&c, 1);
-        if (c >= '0' && c <= '9')
-            num_string[i] = c;
-        else if (i == 0 && c == '-')
-            num_string[i] = c;
+        if (numbytes == 1)
+        {
+            DEBUG('d', "\nInvalid input. Return 0");
+            machine->WriteRegister(2, 0);
+            delete buffer;
+            return;
+        }
         else
-            break;
+        {
+            isNegative = true;
+            startIndex = 1;
+        }
     }
-    int i = (num_string[0] == '-') ? 1 : 0;
-    while (i < maxlen && num_string[i] >= '0' && num_string[i] <= '9')
-        ret = ret * 10 + num_string[i++] - '0';
-    ret = (num_string[0] == '-') ? (-ret) : ret;
-    machine->WriteRegister(2, (int)ret);
+    // DEBUG('d', "GOT HERE %s", buffer);
+
+    // Kiem tra tinh hop le cua so nguyen buffer
+    for (int i = startIndex; i < numbytes; i++)
+    {
+        if (buffer[i] < '0' || buffer[i] > '9')
+        {
+            DEBUG('d', "\n Invalid input. Return 0");
+            machine->WriteRegister(2, 0);
+            delete buffer;
+            return;
+        }
+    }
+    // DEBUG('d', "GOT HERE %s", buffer);
+
+    // La so nguyen hop le, tien hanh chuyen chuoi ve so nguyen
+    for (int i = startIndex; i < numbytes; i++)
+    {
+        if (isNegative && ((number * 10 + (int)(buffer[i] - '0')) > -MY_INT_MIN))
+        {
+            DEBUG('d', "\n Overflow INT_MIN. Return INT_MIN -2,147,483,648");
+            machine->WriteRegister(2, MY_INT_MIN);
+            delete buffer;
+            return;
+        }
+        if (!isNegative && (number * 10 + (int)(buffer[i] - '0')) > MY_INT_MAX)
+        {
+            DEBUG('d', "\n Overflow INT_MAX. Return INT_MAX 2,147,483,647");
+            machine->WriteRegister(2, MY_INT_MAX);
+            delete buffer;
+            return;
+        }
+        number = number * 10 + (buffer[i] - '0');
+    }
+
+    if (isNegative)
+        number = -number;
+    
+    // DEBUG('d', "GOT HERE ! %d", number);
+
+    machine->WriteRegister(2, number);
+    delete buffer;
+    return;
 }
+
 void SyscallExceptionHandler_PrintInt()
 {
     int n = machine->ReadRegister(4);
-    /*int: [-2147483648 , 2147483647] --> max length = 11*/
-    const int maxlen = 11;
-    char num_string[maxlen] = {0};
-    int tmp[maxlen] = {0}, i = 0, j = 0;
-    if (n < 0)
+    // DEBUG('d', "LOL%d\n", n);
+    const int maxlen = 12;
+    char num_string[maxlen];
+    int nums[maxlen], i = 0, j = 0;
+
+    if (n == MY_INT_MIN)
     {
+        num_string[j++] = '-';
+        nums[i++] = 8; // so cuoi cua -2147483648
+        n /= 10;
         n = -n;
-        num_string[i++] = '-';
     }
+    else if (n < 0)
+    {
+        num_string[j++] = '-';
+        n = -n;
+    }
+
     do
     {
-        tmp[j++] = n % 10;
+        nums[i++] = n % 10;
         n /= 10;
     } while (n);
-    while (j)
-        num_string[i++] = '0' + (char)tmp[--j];
-    gSynchConsole->Write(num_string, i);
+
+    for (int k = i - 1; k >= 0; k--)
+    {
+        num_string[j++] = '0' + nums[k];
+    }
+
+    gSynchConsole->Write(num_string, j);
     machine->WriteRegister(2, 0);
+    return;
 }
 void SyscallExceptionHandler_ReadChar()
 {
@@ -203,7 +273,7 @@ void ExceptionHandler(ExceptionType which)
         case SC_Halt:
         {
             DEBUG('a', "\n Shutdown, initiated by user program.");
-            printf("\n\n Shutdown, initiated by user program.");
+            // printf("\n\n Shutdown, initiated by user program.");
             interrupt->Halt();
             break;
         }
@@ -211,7 +281,7 @@ void ExceptionHandler(ExceptionType which)
         case SC_Exit:
         {
             DEBUG('a', "\n System call Exit.");
-            printf("\n\n System call Exit.");
+            // printf("\n\n System call Exit.");
             interrupt->Halt();
             break;
         }
@@ -299,7 +369,6 @@ void ExceptionHandler(ExceptionType which)
         }
         }
 
-        // Increase Program Counter
         IncreasePC();
         break;
     }
