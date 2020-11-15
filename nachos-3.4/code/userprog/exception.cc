@@ -98,7 +98,15 @@ void SyscallExceptionHandler_ReadInt()
     int MAX_BUFFER = 255;
     buffer = new char[MAX_BUFFER + 1];
     int numbytes = gSynchConsole->Read(buffer, MAX_BUFFER); // doc buffer toi da MAX_BUFFER ki tu, tra ve so ki tu doc dc
-    long long number = 0;                                   
+    long long number = 0;               
+
+    if (numbytes < 0) {
+        printf("\n Read console fail. Return 0.");
+        DEBUG('d', "\nRead console fail. Return 0.");
+        machine->WriteRegister(2, 0);
+        delete buffer;
+        return;
+    }                    
 
     /* Qua trinh chuyen doi tu buffer sang so nguyen int */
     bool isNegative = false;
