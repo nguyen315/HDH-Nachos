@@ -1,1 +1,2 @@
-# Đồ án Hệ điều hành 18-22
+# HDH-Nachos
+Đồ án HDH Nachos
