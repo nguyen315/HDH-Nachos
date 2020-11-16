@@ -1,8 +1,10 @@
-#include"syscall.h"
+#include "syscall.h"
+#include "copyright.h"
 #define MAX_LENGTH 255
-int main(){
-	char c;
-	c= ReadChar();
+int main()
+{
+ 	char c;
+	c = ReadChar();
 	PrintChar(c);
 	return 0;		
 }

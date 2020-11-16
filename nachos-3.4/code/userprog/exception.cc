@@ -75,7 +75,7 @@ int System2User(int virtAddr, int len, char *buffer)
 // Increase Program Counter
 void IncreasePC()
 {
-    printf("\n IncreasePC() call ...");
+    //printf("\n IncreasePC() call ...");
     int counter = machine->ReadRegister(PCReg);
     machine->WriteRegister(PrevPCReg, counter);
     counter = machine->ReadRegister(NextPCReg);
@@ -115,15 +115,17 @@ void SyscallExceptionHandler_ReadChar() {
 	}
 
 	delete buffer;
-	IncreasePC(); // error system
 	return;
-
+	//IncreasePC(); // error system
+	//return;
+	//break;
 }
 void SyscallExceptionHandler_PrintChar() {
 	char c = (char)machine->ReadRegister(4); // Doc ki tu tu thanh ghi r4
 	gSynchConsole->Write(&c, 1); // In ky tu tu bien c, 1 byte
+	return;
 	//IncreasePC();
-	break;
+	//break;
 }
 void SyscallExceptionHandler_ReadString() {
 

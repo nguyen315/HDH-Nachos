@@ -8,15 +8,15 @@ int main()
     /*Create a file*/
     if (Create("text.txt") == -1)
     {
-        print("\nCreate file ~");
-        print(filename);
-        print("fail.");   
+        //print("\nCreate file ~");
+        //print(filename);
+        //print("fail.");   
     }
     else
     {
-        print("\nCreate file ~");
-        print(filename);
-        print("success.");   
+        //print("\nCreate file ~");
+        //print(filename);
+        //print("success.");   
     }
 
     return 0;

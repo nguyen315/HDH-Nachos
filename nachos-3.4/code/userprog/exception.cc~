@@ -91,9 +91,6 @@ void SyscallExceptionHandler_PrintInt() {
 
 }
 void SyscallExceptionHandler_ReadChar() {
-	//Input: Khong co
-	//Output: Duy nhat 1 ky tu (char)
-	//Cong dung: Doc mot ky tu tu nguoi dung nhap
 	int maxBytes = 255;
 	char* buffer = new char[255];
 	int numBytes = gSynchConsole->Read(buffer, maxBytes);
@@ -118,19 +115,17 @@ void SyscallExceptionHandler_ReadChar() {
 	}
 
 	delete buffer;
+	return;
 	//IncreasePC(); // error system
 	//return;
-	break;
-
+	//break;
 }
 void SyscallExceptionHandler_PrintChar() {
-	// Input: Ki tu(char)
-	// Output: Ki tu(char)
-	// Cong dung: Xuat mot ki tu la tham so arg ra man hinh
 	char c = (char)machine->ReadRegister(4); // Doc ki tu tu thanh ghi r4
 	gSynchConsole->Write(&c, 1); // In ky tu tu bien c, 1 byte
+	return;
 	//IncreasePC();
-	break;
+	//break;
 }
 void SyscallExceptionHandler_ReadString() {
 
