@@ -115,6 +115,11 @@ int Read(char *buffer, int size, OpenFileId id);
 /* Close the file, we're done reading and writing to it. */
 void Close(OpenFileId id);
 
+/* Read a string having a predefined length */
+void ReadString(char buffer[], int length);
+
+/* Print a string to console */
+void PrintString(char buffer[]);
 
 
 /* User-level thread operations: Fork and Yield.  To allow multiple

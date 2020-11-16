@@ -1,0 +1,12 @@
+#include "syscall.h"
+#include "copyright.h"
+#include "system.h"
+
+int main() 
+{
+	char* buffer;
+	ReadString(buffer, 255);
+	printf("Chuoi vua nhap la %s \n", buffer);
+
+	return 0;
+}
