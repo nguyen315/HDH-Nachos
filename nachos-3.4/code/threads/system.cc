@@ -159,7 +159,7 @@ void Initialize(int argc, char **argv)
 #endif
 
 #ifdef FILESYS
-    synchDisk = new SynchDisk("DISK");
+        synchDisk = new SynchDisk("DISK");
 #endif
 
 #ifdef FILESYS_NEEDED

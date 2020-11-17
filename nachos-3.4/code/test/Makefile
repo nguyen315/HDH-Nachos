@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort createfile ascii help
+all: halt shell matmult sort createfile ioint demo readstring printstring ascii help
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -73,21 +73,37 @@ createfile: createfile.o start.o
 	../bin/coff2noff createfile.coff createfile
 
 ascii.o: ascii.c
-
 	$(CC) $(CFLAGS) -c ascii.c
-
 ascii: ascii.o start.o
-
 	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
-
 	../bin/coff2noff ascii.coff ascii
 
 help.o: help.c
-
 	$(CC) $(CFLAGS) -c help.c
-
-help: help.o start.o
-
+help: help.o start.o	
 	$(LD) $(LDFLAGS) start.o help.o -o help.coff
-
 	../bin/coff2noff help.coff help
+
+readstring.o: readstring.c
+	$(CC) $(CFLAGS) -c readstring.c
+readstring: readstring.o start.o
+	$(LD) $(LDFLAGS) start.o readstring.o -o readstring.coff
+	../bin/coff2noff readstring.coff readstring
+
+printstring.o: printstring.c
+	$(CC) $(CFLAGS) -c printstring.c
+printstring: printstring.o start.o
+	$(LD) $(LDFLAGS) start.o printstring.o -o printstring.coff
+	../bin/coff2noff printstring.coff printstring
+	
+demo.o: demo.c
+	$(CC) $(CFLAGS) -c demo.c
+demo: demo.o start.o
+	$(LD) $(LDFLAGS) start.o demo.o -o demo.coff
+	../bin/coff2noff demo.coff demo
+	
+ioint.o: ioint.c
+	$(CC) $(CFLAGS) -c ioint.c
+ioint: ioint.o start.o
+	$(LD) $(LDFLAGS) start.o ioint.o -o ioint.coff
+	../bin/coff2noff ioint.coff ioint

@@ -24,5 +24,4 @@ main()
     PrintString("*                        (1 <= N <= 100 ) Sort the array and print it.	      *\n");
     PrintString("*     2.2. Ascii program: Print all printable ascii characters.              *\n");
     PrintString("******************************************************************************\n");
-    Halt();
 }

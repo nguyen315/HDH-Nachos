@@ -45,5 +45,6 @@ int main()
         PrintInt(a[i]);
     }
     PrintChar('\n');
-    Halt();
+
+    return 0;
 }
