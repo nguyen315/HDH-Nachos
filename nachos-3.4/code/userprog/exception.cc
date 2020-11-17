@@ -69,7 +69,8 @@ int System2User(int virtAddr, int len, char *buffer)
     int oneChar = 0;
     do
     {
-        oneChar = (int)buffer[i];        machine->WriteMem(virtAddr + i, 1, oneChar);
+        oneChar = (int)buffer[i];
+        machine->WriteMem(virtAddr + i, 1, oneChar);
         i++;
     } while (i < len && oneChar != 0);
     return i;
@@ -88,6 +89,47 @@ void IncreasePC()
 
 // function handle SyscallException
 
+void SyscallExceptionHandler_CreateFile()
+{
+    int virtAddr;
+    char *filename;
+    DEBUG('a', "\n SC_Create call ...");
+    DEBUG('a', "\n Reading virtual address of filename");
+    // Lấy tham số tên tập tin từ thanh ghi r4
+    virtAddr = machine->ReadRegister(4);
+    DEBUG('a', "\n Reading filename.");
+    // MaxFileLength là = 32
+    filename = User2System(virtAddr, 32 + 1);
+    if (filename == NULL)
+    {
+        printf("\n Not enough memory in system");
+        DEBUG('a', "\n Not enough memory in system");
+        machine->WriteRegister(2, -1); // trả về lỗi cho chương
+        // trình người dùng
+        delete filename;
+        return;
+    }
+    DEBUG('a', "\n Finish reading filename.");
+    //DEBUG('a',"\n File name : '"<<filename<<"'");
+    // Create file with size = 0
+    // Dùng đối tượng fileSystem của lớp OpenFile để tạo file,
+    // việc tạo file này là sử dụng các thủ tục tạo file của hệ điều
+    // hành Linux, chúng ta không quản ly trực tiếp các block trên
+    // đĩa cứng cấp phát cho file, việc quản ly các block của file
+    // trên ổ đĩa là một đồ án khác
+    if (!fileSystem->Create(filename, 0))
+    {
+        printf("\n Error create file '%s'", filename);
+        machine->WriteRegister(2, -1);
+        delete filename;
+        return;
+    }
+    machine->WriteRegister(2, 0); // trả về cho chương trình
+    // người dùng thành công
+    delete filename;
+    return;
+}
+
 void SyscallExceptionHandler_ReadInt()
 {
     // Input: K co
@@ -97,15 +139,16 @@ void SyscallExceptionHandler_ReadInt()
     int MAX_BUFFER = 255;
     buffer = new char[MAX_BUFFER + 1];
     int numbytes = gSynchConsole->Read(buffer, MAX_BUFFER); // doc buffer toi da MAX_BUFFER ki tu, tra ve so ki tu doc dc
-    long long number = 0;               
+    long long number = 0;
 
-    if (numbytes < 0) {
+    if (numbytes < 0)
+    {
         printf("\n Read console fail. Return 0.");
         DEBUG('d', "\nRead console fail. Return 0.");
         machine->WriteRegister(2, 0);
         delete buffer;
         return;
-    }                    
+    }
 
     /* Qua trinh chuyen doi tu buffer sang so nguyen int */
     bool isNegative = false;
@@ -162,7 +205,7 @@ void SyscallExceptionHandler_ReadInt()
 
     if (isNegative)
         number = -number;
-    
+
     // DEBUG('d', "GOT HERE ! %d", number);
 
     machine->WriteRegister(2, number);
@@ -210,63 +253,70 @@ void SyscallExceptionHandler_PrintInt()
 void SyscallExceptionHandler_ReadChar()
 {
     int maxBytes = 255;
-	char* buffer = new char[255];
-	int numBytes = gSynchConsole->Read(buffer, maxBytes);
+    char *buffer = new char[255];
+    int numBytes = gSynchConsole->Read(buffer, maxBytes);
 
-	if(numBytes > 1) //Neu nhap nhieu hon 1 ky tu thi khong hop le
-	{
-		printf("Chi duoc nhap duy nhat 1 ky tu!");
-		DEBUG('a', "\nERROR: Chi duoc nhap duy nhat 1 ky tu!");
-		machine->WriteRegister(2, 0);
-	}
-	else if(numBytes == 0) //Ky tu rong
-	{
-		printf("Ky tu rong!");
-		DEBUG('a', "\nERROR: Ky tu rong!");
-		machine->WriteRegister(2, 0);
-	}
-	else
-	{
-		//Chuoi vua lay co dung 1 ky tu, lay ky tu o index = 0, return vao thanh ghi R2
-		char c = buffer[0];
-		machine->WriteRegister(2, c);
-	}
+    if (numBytes > 1) //Neu nhap nhieu hon 1 ky tu thi khong hop le
+    {
+        printf("Chi duoc nhap duy nhat 1 ky tu!");
+        DEBUG('a', "\nERROR: Chi duoc nhap duy nhat 1 ky tu!");
+        machine->WriteRegister(2, 0);
+    }
+    else if (numBytes == 0) //Ky tu rong
+    {
+        printf("Ky tu rong!");
+        DEBUG('a', "\nERROR: Ky tu rong!");
+        machine->WriteRegister(2, 0);
+    }
+    else
+    {
+        //Chuoi vua lay co dung 1 ky tu, lay ky tu o index = 0, return vao thanh ghi R2
+        char c = buffer[0];
+        machine->WriteRegister(2, c);
+    }
 
-	delete buffer;
-	return;
-	//IncreasePC(); // error system
-	//return;
-	//break;
+    delete buffer;
+    return;
+    //IncreasePC(); // error system
+    //return;
+    //break;
 }
+
 void SyscallExceptionHandler_PrintChar()
 {
     char c = (char)machine->ReadRegister(4); // Doc ki tu tu thanh ghi r4
-	gSynchConsole->Write(&c, 1); // In ky tu tu bien c, 1 byte
-	return;
-	//IncreasePC();
-	//break;
+    gSynchConsole->Write(&c, 1);             // In ky tu tu bien c, 1 byte
+    return;
+    //IncreasePC();
+    //break;
 }
-void SyscallExceptionHandler_ReadString() {
-  int p;
-  int len;
-  char* buffer;
-  p = machine->ReadRegister(4); // lấy địa chỉ từ thanh ghi r4
-  len = machine->ReadRegister(5); // độ dài chuỗi từ thanh ghi r5
-  buffer = User2System(p, len); 
-  gSynchConsole->Read(buffer, len); // đọc chuỗi 
-  System2User(p, len, buffer);
-  delete buffer;
+
+void SyscallExceptionHandler_ReadString()
+{
+    int p, len;
+    char *buffer;
+    p = machine->ReadRegister(4);   // lấy địa chỉ từ thanh ghi r4
+    len = machine->ReadRegister(5); // độ dài chuỗi từ thanh ghi r5
+    DEBUG('d', "len: %d\n", len);
+    buffer = User2System(p, len);
+    gSynchConsole->Read(buffer, len); // đọc chuỗi
+    DEBUG('d', buffer);
+    System2User(p, len, buffer);
+    delete buffer;
 }
-void SyscallExceptionHandler_PrintString() {
-  int p;
-  int len = 0;			
-  char* buffer;
-  p = machine->ReadRegister(4); // lấy địa chỉ từ thanh ghi r4
-  buffer = User2System(p, 255); 
-  while (buffer[++len]); //tìm độ dài chuỗi
-  gSynchConsole->Write(buffer, len);
-  delete buffer;
+void SyscallExceptionHandler_PrintString()
+{
+    int p;
+    int len = 0;
+    char *buffer;
+    p = machine->ReadRegister(4); // lấy địa chỉ từ thanh ghi r4
+    buffer = User2System(p, 255);
+    while (buffer[++len])
+        ; //tìm độ dài chuỗi
+    gSynchConsole->Write(buffer, len);
+    delete buffer;
 }
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -309,34 +359,44 @@ void ExceptionHandler(ExceptionType which)
         interrupt->Halt();
         break;
     case BusErrorException:
+        DEBUG('a', "\n BusErrorException.");
+        printf("\n\n BusErrorException.");
         interrupt->Halt();
         break;
     case AddressErrorException:
+        DEBUG('a', "\n AddressErrorException.");
+        printf("\n\n AddressErrorException.");
         interrupt->Halt();
         break;
     case OverflowException:
+        DEBUG('a', "\n OverflowException.");
+        printf("\n\n OverflowException.");
         interrupt->Halt();
         break;
     case IllegalInstrException:
+        DEBUG('a', "\n IllegalInstrException.");
+        printf("\n\n IllegalInstrException.");
         interrupt->Halt();
         break;
     case NumExceptionTypes:
+        DEBUG('a', "\n NumExceptionTypes.");
+        printf("\n\n NumExceptionTypes.");
         interrupt->Halt();
         break;
-    case SyscallException:   	// case call syscall
+    case SyscallException: // case call syscall
         switch (type)
         {
         case SC_Halt:
         {
             DEBUG('a', "\n Shutdown, initiated by user program.");
-            // printf("\n\n Shutdown, initiated by user program.");
+            printf("\n\n Shutdown, initiated by user program.");
             interrupt->Halt();
             break;
         }
 
         case SC_Exit:
         {
-            DEBUG('a', "\n System call Exit.");
+            DEBUG('d', "\n System call Exit.");
             // printf("\n\n System call Exit.");
             interrupt->Halt();
             break;
@@ -344,42 +404,7 @@ void ExceptionHandler(ExceptionType which)
 
         case SC_Create:
         {
-            int virtAddr;
-            char *filename;
-            DEBUG('a', "\n SC_Create call ...");
-            DEBUG('a', "\n Reading virtual address of filename");
-            // Lấy tham số tên tập tin từ thanh ghi r4
-            virtAddr = machine->ReadRegister(4);
-            DEBUG('a', "\n Reading filename.");
-            // MaxFileLength là = 32
-            filename = User2System(virtAddr, 32 + 1);
-            if (filename == NULL)
-            {
-                printf("\n Not enough memory in system");
-                DEBUG('a', "\n Not enough memory in system");
-                machine->WriteRegister(2, -1); // trả về lỗi cho chương
-                // trình người dùng
-                delete filename;
-                return;
-            }
-            DEBUG('a', "\n Finish reading filename.");
-            //DEBUG('a',"\n File name : '"<<filename<<"'");
-            // Create file with size = 0
-            // Dùng đối tượng fileSystem của lớp OpenFile để tạo file,
-            // việc tạo file này là sử dụng các thủ tục tạo file của hệ điều
-            // hành Linux, chúng ta không quản ly trực tiếp các block trên
-            // đĩa cứng cấp phát cho file, việc quản ly các block của file
-            // trên ổ đĩa là một đồ án khác
-            if (!fileSystem->Create(filename, 0))
-            {
-                printf("\n Error create file '%s'", filename);
-                machine->WriteRegister(2, -1);
-                delete filename;
-                return;
-            }
-            machine->WriteRegister(2, 0); // trả về cho chương trình
-            // người dùng thành công
-            delete filename;
+            SyscallExceptionHandler_CreateFile();
             break;
         }
 

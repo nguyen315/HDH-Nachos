@@ -6,7 +6,5 @@ int main()
     int a, b;
     a = ReadInt();
     PrintInt(a);
-    b = ReadInt();
-    PrintInt(b);
     return 0;
 }
