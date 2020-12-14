@@ -14,8 +14,8 @@ PTable::PTable(int size)
 
 	// khoi tao tien trinh cha
 	pcb[0] = new PCB(0);
-	pcb[0]->SetFileName("./test/scheduler");
-	pcb[0]->parentID = -1;
+	// pcb[0]->SetFileName("./test/scheduler");
+	// pcb[0]->parentID = -1;
 	
 }
 
@@ -159,7 +159,7 @@ void PTable::Remove(int pID)
 	{
 		bm->Clear(pID);
 		delete pcb[pID];
-		// pcb[pID]=NULL;
+		pcb[pID]=NULL;
 	}
 }
 
