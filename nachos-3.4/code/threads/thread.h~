@@ -44,7 +44,7 @@
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
-//#include "fileTable.h"
+#include "fileTable.h"
 #endif
 
 #define THREAD_MIN_PRIORITY
@@ -88,7 +88,7 @@ class Thread {
     ~Thread();                          // deallocate a Thread
                                         // NOTE -- thread being deleted must not be running when delete is called basic thread operations
 
-    //FileTable* mTable;
+    FileTable* mTable;
     int processID;
     int exitStatus;
     void FreeSpace(){

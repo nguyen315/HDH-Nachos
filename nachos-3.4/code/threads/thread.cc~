@@ -38,7 +38,7 @@ Thread::Thread(char* debugName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-    
+    //------------------// Modified by Nguyen Phuc Hau \\------------------
     processID = 0;
     exitStatus = 0;
     //mTable = new FileTable(MAX_FILE);    
