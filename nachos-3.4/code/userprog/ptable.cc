@@ -13,6 +13,9 @@ PTable::PTable(int size)
 	bm->Mark(0);
 
 	// khoi tao tien trinh cha
+	pcb[0] = new PCB(0);
+	pcb[0]->SetFileName("./test/scheduler");
+	pcb[0]->parentID = -1;
 	
 }
 
@@ -94,14 +97,19 @@ int PTable::ExitUpdate(int ec)
 
 	pcb[pID]->SetExitCode(ec);
 
-	if (pcb[pID]->JoinStatus != -1)
-	{
-		pcb[pID]->JoinRelease();
-		pcb[pID]->ExitWait();
-		Remove(pID);
-	}
-	else
-		Remove(pID);
+	// if (pcb[pID]->JoinStatus != -1)
+	// {
+	// 	pcb[pID]->JoinRelease();
+	// 	pcb[pID]->ExitWait();
+	// 	Remove(pID);
+	// }
+	// else
+	// 	Remove(pID);
+	pcb[pID]->JoinRelease();
+    // 
+	pcb[pID]->ExitWait();
+	
+	Remove(pID);
 	return ec;
 }
 
@@ -127,7 +135,7 @@ int PTable::JoinUpdate(int pID)
 		return -1;
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////
-
+	pcb[pcb[pID]->parentID]->IncNumWait();
 	pcb[pID]->JoinWait(); //doi den khi tien trinh con ket thuc
 
 	int ec = pcb[pID]->GetExitCode();
@@ -151,7 +159,7 @@ void PTable::Remove(int pID)
 	{
 		bm->Clear(pID);
 		delete pcb[pID];
-		pcb[pID]=NULL;
+		// pcb[pID]=NULL;
 	}
 }
 

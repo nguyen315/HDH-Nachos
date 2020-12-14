@@ -54,13 +54,17 @@ void PCB::SetExitCode(int ec)
 
 void PCB::IncNumWait()
 {
+	mutex->P();
 	numwait++;
+	mutex->V();
 }
 
 void PCB::DecNumWait()
 {
+	mutex->P();
 	if(numwait)
 		numwait--;
+	mutex->V();
 }
 
 char* PCB::GetNameThread()
@@ -72,13 +76,13 @@ char* PCB::GetNameThread()
 void PCB::JoinWait()
 {
 	JoinStatus= parentID;
-	IncNumWait();
+	// IncNumWait();
 	joinsem->P();
 }
 
 void PCB::JoinRelease()
 {
-	DecNumWait();
+	// DecNumWait();
 	joinsem->V();
 }
 
