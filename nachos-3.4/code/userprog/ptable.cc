@@ -14,9 +14,7 @@ PTable::PTable(int size)
 
 	// khoi tao tien trinh cha
 	pcb[0] = new PCB(0);
-	// pcb[0]->SetFileName("./test/scheduler");
-	// pcb[0]->parentID = -1;
-	
+	pcb[0]->SetFileName("./test/scheduler");
 }
 
 PTable::~PTable()
@@ -90,25 +88,24 @@ int PTable::ExitUpdate(int ec)
 	//Neu la main process thi Halt()
 	if (pID == 0)
 	{
+		currentThread->FreeSpace();
 		interrupt->Halt();
 		return 0;
 	}
 	/////////////////////////////////////////////////////////////
+	if (IsExist(pID) == false)
+	{
+		printf("\nPTable::ExitUpdate: This %d is not exist. Try again?", pID);
+		return -1;
+	}
 
 	pcb[pID]->SetExitCode(ec);
+	pcb[pcb[pID]->parentID]->DecNumWait();
 
-	// if (pcb[pID]->JoinStatus != -1)
-	// {
-	// 	pcb[pID]->JoinRelease();
-	// 	pcb[pID]->ExitWait();
-	// 	Remove(pID);
-	// }
-	// else
-	// 	Remove(pID);
 	pcb[pID]->JoinRelease();
-    // 
-	pcb[pID]->ExitWait();
 	
+	pcb[pID]->ExitWait();
+
 	Remove(pID);
 	return ec;
 }
@@ -159,7 +156,7 @@ void PTable::Remove(int pID)
 	{
 		bm->Clear(pID);
 		delete pcb[pID];
-		pcb[pID]=NULL;
+		pcb[pID] = NULL;
 	}
 }
 

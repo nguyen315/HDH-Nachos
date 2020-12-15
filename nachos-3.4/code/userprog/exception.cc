@@ -316,6 +316,68 @@ void SyscallExceptionHandler_PrintString()
     gSynchConsole->Write(buffer, len);
     delete buffer;
 }
+void SyscallExceptionHandler_Exec()
+{
+    // Input: vi tri int
+    // Output: Fail return -1, Success: return id cua thread dang chay
+    // SpaceId Exec(char *name);
+    int virtAddr;
+    virtAddr = machine->ReadRegister(4); // doc dia chi ten chuong trinh tu thanh ghi r4
+    char *name;
+    name = User2System(virtAddr, MaxFileLength + 1); // Lay ten chuong trinh, nap vao kernel
+
+    if (name == NULL)
+    {
+        DEBUG('a', "\n Not enough memory in System");
+        printf("\n Not enough memory in System");
+        machine->WriteRegister(2, -1);
+        return;
+    }
+    OpenFile *oFile = fileSystem->Open(name);
+    if (oFile == NULL)
+    {
+        printf("\nExec:: Can't open this file.");
+        machine->WriteRegister(2, -1);
+        return;
+    }
+
+    delete oFile;
+
+    // Return child process id
+    int id = processTab->ExecUpdate(name);
+    machine->WriteRegister(2, id);
+
+    delete[] name;
+    return;
+}
+void SyscallExceptionHandler_Join()
+{
+    // int Join(SpaceId id)
+    // Input: id dia chi cua thread
+    // Output:
+    int id = machine->ReadRegister(4);
+    int res = processTab->JoinUpdate(id);
+    machine->WriteRegister(2, res);
+    return;
+}
+void SyscallExceptionHandler_Exit()
+{
+    //void Exit(int status);
+    // Input: status code
+    int exitStatus = machine->ReadRegister(4);
+
+    if (exitStatus != 0)
+    {
+        return;
+    }
+
+    int res = processTab->ExitUpdate(exitStatus);
+    //machine->WriteRegister(2, res);
+
+    currentThread->FreeSpace();
+    currentThread->Finish();
+    return;
+}
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -436,73 +498,18 @@ void ExceptionHandler(ExceptionType which)
         }
         case SC_Exec:
         {
-            // Input: vi tri int
-            // Output: Fail return -1, Success: return id cua thread dang chay
-            // SpaceId Exec(char *name);
-            int virtAddr;
-            virtAddr = machine->ReadRegister(4); // doc dia chi ten chuong trinh tu thanh ghi r4
-            char *name;
-            name = User2System(virtAddr, MaxFileLength + 1); // Lay ten chuong trinh, nap vao kernel
-
-            if (name == NULL)
-            {
-                DEBUG('a', "\n Not enough memory in System");
-                printf("\n Not enough memory in System");
-                machine->WriteRegister(2, -1);
-                //IncreasePC();
-                return;
-            }
-            OpenFile *oFile = fileSystem->Open(name);
-            if (oFile == NULL)
-            {
-                printf("\nExec:: Can't open this file.");
-                machine->WriteRegister(2, -1);
-                IncreasePC();
-                return;
-            }
-
-            delete oFile;
-
-            // Return child process id
-            int id = processTab->ExecUpdate(name);
-            machine->WriteRegister(2, id);
-
-            delete[] name;
-            IncreasePC();
-            return;
+            SyscallExceptionHandler_Exec();
+            break;
         }
         case SC_Join:
         {
-            // int Join(SpaceId id)
-            // Input: id dia chi cua thread
-            // Output:
-            int id = machine->ReadRegister(4);
-
-            int res = processTab->JoinUpdate(id);
-
-            machine->WriteRegister(2, res);
-            IncreasePC();
-            return;
+            SyscallExceptionHandler_Join();
+            break;
         }
         case SC_Exit:
         {
-            //void Exit(int status);
-            // Input: status code
-            int exitStatus = machine->ReadRegister(4);
-
-            if (exitStatus != 0)
-            {
-                IncreasePC();
-                return;
-            }
-
-            int res = processTab->ExitUpdate(exitStatus);
-            //machine->WriteRegister(2, res);
-
-            // currentThread->FreeSpace();
-            currentThread->Finish();
-            IncreasePC();
-            return;
+            SyscallExceptionHandler_Exit();
+            break;
         }
 
         default:

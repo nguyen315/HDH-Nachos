@@ -29,6 +29,9 @@ PCB::~PCB()
 		delete exitsem;
 	if(mutex != NULL)
 		delete mutex;
+	if (thread != NULL) {
+		thread->FreeSpace();
+	}
 }
 
 //------------------------------------------------------------------

@@ -90,6 +90,13 @@ class Thread {
     int processID;
     int exitStatus;
 
+    void FreeSpace() {
+      if (space != NULL) {
+        delete space;
+        space = NULL;
+      }
+    }
+
     // basic thread operations
 
     void Fork(VoidFunctionPtr func, int arg); 	// Make thread run (*func)(arg)
